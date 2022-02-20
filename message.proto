@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+package serialisationLab;
+
+message Message {
+  required int32 PackageID = 1;
+  required int32 PersonID = 2;
+  required string Name = 3;
+  repeated int32 Inventory = 4;
+  optional string CurrentLocation = 5;
+  optional Message Enemy = 6;
+  optional float Health = 7;
+}
