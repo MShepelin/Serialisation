@@ -1,0 +1,42 @@
+{
+  "name": "Message",
+  "type": "record",
+  "fields": [
+    {
+      "name": "PackageID",
+      "type": "int"
+    },
+    {
+      "name": "PersonID",
+      "type": "int"
+    },
+    {
+      "name": "Name",
+      "type": "string"
+    },
+    {
+      "name": "Inventory",
+      "type": {
+        "type": "array",
+        "items": "int",
+        "default": []
+      }
+    },
+    {
+      "name": "CurrentLocation",
+      "type": "string"
+    },
+    {
+      "name": "Enemy",
+      "type": [
+        "null",
+        "Message"
+      ],
+      "default": null
+    },
+    {
+      "name": "Health",
+      "type": "float"
+    }
+  ]
+}

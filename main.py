@@ -6,32 +6,18 @@ message = '''d = {
     'PackageID' : 1539, 
     'PersonID' : 33, 
     'Name' : """MEGA_GAMER_2222""", 
-    'Inventory': [i for i in range(100)],   
+    'Inventory': [i for i in range(200)],   
     'CurrentLocation': """ 
         Pentos is a large port city, more populous than Astapor on Slaver Bay,  
         and may be one of the most populous of the Free Cities.  
         It lies on the bay of Pentos off the narrow sea, with the Flatlands  
-        plains and Velvet Hills to the east. 
-        The city has many square brick towers, controlled by the spice traders.  
-        Most of the roofing is done in tiles. There is a large red temple in  
-        Pentos, along with the manse of Illyrio Mopatis and the Sunrise Gate  
-        allows the traveler to exit the city to the east,  
-        in the direction of the Rhoyne. 
-        Pentos is a large port city, more populous than Astapor on Slaver Bay,  
-        and may be one of the most populous of the Free Cities.  
-        It lies on the bay of Pentos off the narrow sea, with the Flatlands  
-        plains and Velvet Hills to the east. 
-        The city has many square brick towers, controlled by the spice traders.  
-        Most of the roofing is done in tiles. There is a large red temple in  
-        Pentos, along with the manse of Illyrio Mopatis and the Sunrise Gate  
-        allows the traveler to exit the city to the east,  
-        in the direction of the Rhoyne. 
+        plains and Velvet Hills to the east.
         """,
     'Enemy' : { 
         'PackageID' : 1539, 
         'PersonID' : 654, 
         'Name' : """HARPY_POTHER""", 
-        'Inventory': [i for i in range(100)],   
+        'Inventory': [i for i in range(200)],   
         'CurrentLocation': """
             Harvard University is a private Ivy League research university in Cambridge, 
             Massachusetts. Founded in 1636 as Harvard College and named for its first 
@@ -46,20 +32,37 @@ message = '''d = {
 setup_pickle    = '%s ; import pickle ; src=pickle.dumps(d, 2)' % message 
 setup_json      = '%s ; import json; src=json.dumps(d)' % message 
 setup_xml       = '%s ; from xml_marshaller import xml_marshaller ; src=xml_marshaller.dumps(d)' % message 
-setup_protobuf  = '%s ; from google.protobuf.json_format import ParseDict, MessageToDict; from message_pb2 import Message; src=ParseDict(d, Message())' % message 
+setup_protobuf  = '%s ; from google.protobuf.json_format import ParseDict, MessageToDict; from message_pb2 import Message; protoObject=ParseDict(d, Message()); src=protoObject.SerializeToString()' % message 
+setup_msg_pack  = '%s ; import msgpack; src = msgpack.packb(d)' % message 
+setup_yaml      = '%s ; from yaml import CLoader, CDumper; import yaml; src = yaml.dump(d, encoding="""utf-8""", default_flow_style=False, Dumper=CDumper)' % message 
+setup_avro      = ''' 
+%s;
+from io import BytesIO;
+import fastavro;
+schema = fastavro.schema.load_schema("message.avsc");
+
+bytes_writer = BytesIO();
+fastavro.schemaless_writer(bytes_writer, schema, d);
+src = bytes_writer.getvalue();
+''' % message 
 
 tests = [ 
     # (title, setup, enc_test, dec_test) 
     ('pickle (native serialization)', setup_pickle, 'pickle.dumps(d, 2)', 'pickle.loads(src)'), 
     ('json', setup_json, 'json.dumps(d)', 'json.loads(src)'), 
-    ('protobuf', setup_protobuf, 'ParseDict(d, Message())', 'MessageToDict(src)'), 
+    ('protobuf', setup_protobuf, 'protoObject.SerializeToString()', 'Message().ParseFromString(src)'), 
+    ('apache avro', setup_avro, 
+     'bw=BytesIO(); fastavro.schemaless_writer(bw,schema,d); bytes_writer.getvalue()', 
+     'bw=BytesIO(); bw.write(src);bw.seek(0); fastavro.schemaless_reader(bw, schema)'), 
+    ('message pack', setup_msg_pack, 'msgpack.packb(d)', 'msgpack.unpackb(src)'),
+    ('yaml', setup_yaml, 'yaml.dump(d, default_flow_style=False, Dumper=CDumper)', 'yaml.load(src, Loader=CLoader)'),
     ('xml', setup_xml, 'xml_marshaller.dumps(d)', 'xml_marshaller.loads(src)'), 
 ] 
-  
-loops = 5000 
+
+loops = 5000
 enc_table = [] 
 dec_table = [] 
-  
+
 print ("Running tests (%d loops each)" % loops) 
   
 for title, mod, enc, dec in tests: 
